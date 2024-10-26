@@ -9,6 +9,7 @@ import { noteService, Note } from '../services/notes';
 import { NoteModal } from './NoteModal';
 import { useDebounce } from '../hooks/useDebounce';
 import { useHumeAI } from '../hooks/useHumeAI';
+import { authService } from '../services/auth';
 
 function Home() {
   const navigate = useNavigate();
@@ -57,8 +58,13 @@ function Home() {
   });
 
 
-  const handleLogout = () => {
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
   };
 
   const toggleRecording = async () => {

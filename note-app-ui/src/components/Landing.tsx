@@ -5,7 +5,6 @@ function Landing() {
 
   return (
     <div className="min-h-screen bg-gradient-main text-jet">
-      {/* Navigation */}
       <nav className="fixed w-full z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
