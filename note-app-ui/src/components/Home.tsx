@@ -15,7 +15,6 @@ function Home() {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'ai'; content: string }[]>([]);
-  const [isVoiceChatting, setIsVoiceChatting] = useState(false);
   const [selectedText, setSelectedText] = useState('');
   const [toolbarPosition, setToolbarPosition] = useState<{ x: number; y: number } | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -425,7 +424,6 @@ function Home() {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 p-8">
         {renderMainContent()}
       </div>
