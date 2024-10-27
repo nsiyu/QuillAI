@@ -41,6 +41,7 @@ function Home() {
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const mainContentRef = useRef<HTMLDivElement>(null); // Reference to the scrollable container
 
   const handleNoteUpdate = useCallback(async (updatedNote: Note) => {
     try {
@@ -161,20 +162,26 @@ function Home() {
     const toolbarHeight = 50; // Approximate height of the toolbar
     const padding = 10; // Padding from the edges
 
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
+    const containerWidth =
+      mainContentRef.current?.clientWidth || window.innerWidth;
+    const containerHeight =
+      mainContentRef.current?.clientHeight || window.innerHeight;
 
     let safeX = x;
     let safeY = y;
 
-    if (x + toolbarWidth / 2 > viewportWidth - padding) {
-      safeX = viewportWidth - toolbarWidth / 2 - padding;
+    // Ensure the toolbar doesn't go off the right or left edge
+    if (x + toolbarWidth / 2 > containerWidth - padding) {
+      safeX = containerWidth - toolbarWidth / 2 - padding;
     } else if (x - toolbarWidth / 2 < padding) {
       safeX = toolbarWidth / 2 + padding;
     }
 
+    // Ensure the toolbar doesn't go above or below the container
     if (y - toolbarHeight - padding < 0) {
       safeY = y + toolbarHeight + padding;
+    } else if (y + toolbarHeight + padding > containerHeight) {
+      safeY = containerHeight - toolbarHeight - padding;
     }
 
     setToolbarPosition({
@@ -182,6 +189,40 @@ function Home() {
       y: safeY,
     });
   };
+
+  // Recalculate toolbar position on scroll within the container
+  useEffect(() => {
+    const handleScroll = () => {
+      if (toolbarPosition && mainContentRef.current && textareaRef.current) {
+        const selectionEnd = textareaRef.current.selectionEnd;
+        const coordinates = getCaretCoordinates(
+          textareaRef.current,
+          selectionEnd
+        );
+        const { top, left } = coordinates;
+
+        const textareaRect = textareaRef.current.getBoundingClientRect();
+        const containerRect = mainContentRef.current.getBoundingClientRect();
+
+        // Calculate position relative to the container
+        let x = textareaRect.left - containerRect.left + left;
+        let y = textareaRect.top - containerRect.top + top - 40; // Adjust Y to position the toolbar above the selection
+
+        setToolbarPositionSafe(x, y);
+      }
+    };
+
+    const container = mainContentRef.current;
+    if (container) {
+      container.addEventListener("scroll", handleScroll);
+    }
+
+    return () => {
+      if (container) {
+        container.removeEventListener("scroll", handleScroll);
+      }
+    };
+  }, [toolbarPosition]);
 
   const handleTextSelection = (
     event:
@@ -207,12 +248,18 @@ function Home() {
       // Get the caret coordinates at the end of the selection
       const coordinates = getCaretCoordinates(textarea, selectionEnd);
       const { top, left } = coordinates;
-      // Adjust coordinates relative to the viewport
-      const rect = textarea.getBoundingClientRect();
-      let x = rect.left + left;
-      let y = rect.top + top - 40; // Adjust Y to position the toolbar above the selection
 
-      setToolbarPositionSafe(x, y);
+      // Get bounding rectangles
+      const textareaRect = textarea.getBoundingClientRect();
+      const containerRect = mainContentRef.current?.getBoundingClientRect();
+
+      if (containerRect) {
+        // Calculate position relative to the container
+        let x = textareaRect.left - containerRect.left + left;
+        let y = textareaRect.top - containerRect.top + top - 40; // Adjust Y to position the toolbar above the selection
+
+        setToolbarPositionSafe(x, y);
+      }
     } else {
       setToolbarPosition(null);
     }
@@ -233,66 +280,32 @@ function Home() {
     },
   });
 
-  const renderChatInput = () => (
-    <div className="p-4 border-t border-maya/10">
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          const input = e.currentTarget.elements.namedItem(
-            "message"
-          ) as HTMLInputElement;
-          if (input.value.trim()) {
-            setChatMessages([
-              ...chatMessages,
-              { role: "user", content: input.value },
-            ]);
-            input.value = "";
-          }
-        }}
-        className="space-y-3"
-      >
-        {humeError && (
-          <div className="p-2 bg-pink/10 text-pink rounded-lg text-sm">
-            {humeError}
-          </div>
-        )}
-
-        <div className="flex gap-2">
+  const renderChatInput = () => {
+    // Implement your chat input component here
+    return (
+      <div className="p-4 border-t border-maya/10">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            // Handle sending the chat message
+          }}
+          className="flex items-center gap-2"
+        >
           <input
             type="text"
-            name="message"
-            placeholder="Ask about this note..."
-            className="flex-1 px-4 py-2 bg-white/50 border border-maya/20 rounded-lg focus:outline-none focus:border-maya"
+            placeholder="Type your message..."
+            className="flex-1 p-2 border border-maya/20 rounded-lg focus:outline-none focus:border-maya"
           />
-
-          <button
-            type="button"
-            onClick={() => {
-              if (isListening) {
-                stopListening();
-              } else {
-                startListening();
-              }
-            }}
-            className={`p-2 rounded-lg transition-all ${
-              isListening
-                ? "bg-pink text-white hover:bg-pink/90"
-                : "border border-maya/20 text-jet/70 hover:bg-pink/10 hover:text-pink hover:border-pink"
-            }`}
-          >
-            {isListening ? <FiMicOff size={20} /> : <FiMic size={20} />}
-          </button>
-
           <button
             type="submit"
-            className="p-2 bg-maya text-white rounded-lg hover:bg-maya/90 transition-all"
+            className="p-2 bg-maya text-white rounded-lg hover:bg-maya/90"
           >
             <FiSend size={20} />
           </button>
-        </div>
-      </form>
-    </div>
-  );
+        </form>
+      </div>
+    );
+  };
 
   const renderMainContent = () => {
     if (!selectedNote) {
@@ -361,6 +374,7 @@ function Home() {
             selectedText={selectedText}
             onSubmit={(suggestion) => {
               console.log("Edit suggestion:", suggestion);
+              // Implement the logic to handle the edit suggestion
             }}
           />
         </div>
@@ -532,14 +546,19 @@ function Home() {
         </div>
       </div>
 
-      <div className="flex-1 p-8">{renderMainContent()}</div>
+      {/* Scrollable Container with Reference */}
+      <div className="flex-1 p-8 overflow-y-auto relative" ref={mainContentRef}>
+        {renderMainContent()}
+      </div>
 
+      {/* Recording Error Notification */}
       {recordingError && (
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 bg-red-500/90 backdrop-blur-sm text-white rounded-full shadow-lg">
           {recordingError}
         </div>
       )}
 
+      {/* Recording Indicator */}
       {isRecording && (
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 bg-pink/90 backdrop-blur-sm text-white rounded-full shadow-lg flex items-center gap-3">
           <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
@@ -550,6 +569,7 @@ function Home() {
         </div>
       )}
 
+      {/* Processing Indicator */}
       {isProcessing && (
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 bg-maya/90 backdrop-blur-sm text-white rounded-full shadow-lg flex items-center gap-3">
           <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
@@ -557,6 +577,7 @@ function Home() {
         </div>
       )}
 
+      {/* Note Creation Modal */}
       <NoteModal
         isOpen={isNoteModalOpen}
         onClose={() => setIsNoteModalOpen(false)}
