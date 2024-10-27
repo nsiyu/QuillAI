@@ -190,40 +190,6 @@ function Home() {
     });
   };
 
-  // Recalculate toolbar position on scroll within the container
-  useEffect(() => {
-    const handleScroll = () => {
-      if (toolbarPosition && mainContentRef.current && textareaRef.current) {
-        const selectionEnd = textareaRef.current.selectionEnd;
-        const coordinates = getCaretCoordinates(
-          textareaRef.current,
-          selectionEnd
-        );
-        const { top, left } = coordinates;
-
-        const textareaRect = textareaRef.current.getBoundingClientRect();
-        const containerRect = mainContentRef.current.getBoundingClientRect();
-
-        // Calculate position relative to the container
-        let x = textareaRect.left - containerRect.left + left;
-        let y = textareaRect.top - containerRect.top + top - 40; // Adjust Y to position the toolbar above the selection
-
-        setToolbarPositionSafe(x, y);
-      }
-    };
-
-    const container = mainContentRef.current;
-    if (container) {
-      container.addEventListener("scroll", handleScroll);
-    }
-
-    return () => {
-      if (container) {
-        container.removeEventListener("scroll", handleScroll);
-      }
-    };
-  }, [toolbarPosition]);
-
   const handleTextSelection = (
     event:
       | React.MouseEvent<HTMLTextAreaElement>
@@ -279,8 +245,11 @@ function Home() {
       audio.play();
     },
     onAIResponse: (response) => {
-      setChatMessages(prevMessages => [...prevMessages, { role: 'ai', content: response }]);
-    }
+      setChatMessages((prevMessages) => [
+        ...prevMessages,
+        { role: "ai", content: response },
+      ]);
+    },
   });
 
   const renderChatInput = () => {
@@ -491,8 +460,8 @@ function Home() {
               <span className="text-xl font-bold text-jet">NeuroPen</span>
             </div>
             <div className="flex items-center gap-4">
-              <button 
-                onClick={() => navigate('/profile')} 
+              <button
+                onClick={() => navigate("/profile")}
                 className="text-jet/70 hover:text-maya transition-colors"
               >
                 <FiUser size={20} />
