@@ -1,4 +1,4 @@
-import { FiMessageSquare, FiEdit2 } from 'react-icons/fi';
+import { FiMessageSquare, FiEdit2 } from "react-icons/fi";
 
 type FloatingToolbarProps = {
   position: { x: number; y: number } | null;
@@ -6,7 +6,11 @@ type FloatingToolbarProps = {
   onEdit: () => void;
 };
 
-export function FloatingToolbar({ position, onAskAI, onEdit }: FloatingToolbarProps) {
+export function FloatingToolbar({
+  position,
+  onAskAI,
+  onEdit,
+}: FloatingToolbarProps) {
   if (!position) return null;
 
   return (
@@ -15,7 +19,7 @@ export function FloatingToolbar({ position, onAskAI, onEdit }: FloatingToolbarPr
       style={{
         top: `${position.y}px`,
         left: `${position.x}px`,
-        transform: 'translate(-50%, -150%)',
+        transform: "translate(-50%, -30%)",
       }}
     >
       <button
