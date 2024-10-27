@@ -4,8 +4,8 @@ import { useTextAnimation } from '../hooks/useTextAnimation';
 
 interface AnimatedNoteContentProps {
   note: Note;
-  onContentChange: (updatedNote: Note) => void;
-  onTextSelection: () => void;
+  onContentChange: (note: Note) => void;
+  onTextSelection: (event: React.MouseEvent<HTMLTextAreaElement> | React.KeyboardEvent<HTMLTextAreaElement>) => void;
   animate: boolean;
 }
 

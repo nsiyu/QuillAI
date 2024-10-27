@@ -17,6 +17,7 @@ interface UseHumeAIProps {
 
 export function useHumeAI({ onTranscriptReceived, onAudioReceived, onAIResponse }: UseHumeAIProps = {}) {
   const [isListening, setIsListening] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const clientRef = useRef<HumeClient | null>(null);
@@ -57,6 +58,7 @@ export function useHumeAI({ onTranscriptReceived, onAudioReceived, onAIResponse 
     isPlayingRef.current = false;
     audioQueueRef.current = [];
     setIsListening(false);
+    setIsMuted(false);
     isClosingRef.current = false;
   }, []);
 
@@ -132,91 +134,104 @@ export function useHumeAI({ onTranscriptReceived, onAudioReceived, onAIResponse 
 
   const startListening = useCallback(async () => {
     try {
-      cleanup();
+      // Only cleanup if we're not already listening
+      if (!isListening) {
+        cleanup();
 
-      if (!clientRef.current) {
-        const apiKey = import.meta.env.VITE_HUME_API_KEY || '';
-        if (!apiKey) {
-          throw new Error('API Key is missing');
+        if (!clientRef.current) {
+          const apiKey = import.meta.env.VITE_HUME_API_KEY || '';
+          if (!apiKey) {
+            throw new Error('API Key is missing');
+          }
+          clientRef.current = new HumeClient({ apiKey });
         }
-        clientRef.current = new HumeClient({ apiKey });
-      }
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      audioStreamRef.current = stream;
-      ensureSingleValidAudioTrack(audioStreamRef.current);
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioStreamRef.current = stream;
+        ensureSingleValidAudioTrack(audioStreamRef.current);
 
-      const socket = await clientRef.current.empathicVoice.chat.connect({
-        configId: import.meta.env.VITE_HUME_CONFIG_ID || '',
-        resumedChatGroupId: chatGroupIdRef.current,
-      });
+        const socket = await clientRef.current.empathicVoice.chat.connect({
+          configId: import.meta.env.VITE_HUME_CONFIG_ID || '',
+          resumedChatGroupId: chatGroupIdRef.current,
+        });
 
-      socket.on('open', () => {
-        console.log('WebSocket connection opened');
+        socket.on('open', () => {
+          console.log('WebSocket connection opened');
 
-        const mimeTypeResult = getBrowserSupportedMimeType();
-        const mimeType = 'mimeType' in mimeTypeResult ? mimeTypeResult.mimeType : MimeType.WEBM;
-        try {
-          const recorder = new MediaRecorder(
-            audioStreamRef.current!,
-            { mimeType }
-          );
-          recorderRef.current = recorder;
+          const mimeTypeResult = getBrowserSupportedMimeType();
+          const mimeType = 'mimeType' in mimeTypeResult ? mimeTypeResult.mimeType : MimeType.WEBM;
+          try {
+            const recorder = new MediaRecorder(
+              audioStreamRef.current!,
+              { mimeType }
+            );
+            recorderRef.current = recorder;
 
-          recorder.ondataavailable = async ({ data }) => {
-            if (data.size > 0 && socket.readyState === WebSocket.OPEN) {
-              try {
-                const base64Data = await convertBlobToBase64(data);
-                const audioInput = { data: base64Data };
-                socket.sendAudioInput(audioInput);
-              } catch (err) {
-                console.error('Error encoding audio data:', err);
-                setError('Error encoding audio data');
-                cleanup();
+            recorder.ondataavailable = async ({ data }) => {
+              if (data.size > 0 && socket.readyState === WebSocket.OPEN && !isMuted) {
+                try {
+                  const base64Data = await convertBlobToBase64(data);
+                  const audioInput = { data: base64Data };
+                  socket.sendAudioInput(audioInput);
+                } catch (err) {
+                  console.error('Error encoding audio data:', err);
+                  setError('Error encoding audio data');
+                  cleanup();
+                }
               }
-            }
-          };
+            };
 
-          recorder.onerror = (event: Event) => {
-            const error = (event as any).error;
-            console.error('MediaRecorder error:', error);
-            setError(`MediaRecorder error: ${error.message}`);
+            recorder.onerror = (event: Event) => {
+              const error = (event as any).error;
+              console.error('MediaRecorder error:', error);
+              setError(`MediaRecorder error: ${error.message}`);
+              cleanup();
+            };
+
+            recorder.start(100);
+            setIsListening(true);
+          } catch (err) {
+            console.error('MediaRecorder initialization error:', err);
+            setError('Failed to initialize MediaRecorder');
             cleanup();
-          };
+          }
+        });
 
-          recorder.start(100);
-          setIsListening(true);
-        } catch (err) {
-          console.error('MediaRecorder initialization error:', err);
-          setError('Failed to initialize MediaRecorder');
+        socket.on('message', handleMessage);
+        socket.on('error', (err) => {
+          console.error('WebSocket error:', err);
+          setError(`WebSocket error: ${err.message || err}`);
           cleanup();
-        }
-      });
+        });
 
-      socket.on('message', handleMessage);
-      socket.on('error', (err) => {
-        console.error('WebSocket error:', err);
-        setError(`WebSocket error: ${err.message || err}`);
-        cleanup();
-      });
+        socket.on('close', (event: any) => {
+          console.log(`WebSocket closed. Code: ${event.code}, Reason: ${event.reason}`);
+          // Only show error for abnormal closures (not code 1000)
+          if (event.code !== 1000) {
+            setError(`WebSocket closed. Code: ${event.code}, Reason: ${event.reason}`);
+          }
+          cleanup();
+        });
 
-      socket.on('close', (event: any) => {
-        console.log(`WebSocket closed. Code: ${event.code}, Reason: ${event.reason}`);
-        setError(`WebSocket closed. Code: ${event.code}, Reason: ${event.reason}`);
-        cleanup();
-      });
-
-      socketRef.current = socket;
+        socketRef.current = socket;
+      } else {
+        // Just toggle mute state if we're already listening
+        setIsMuted(prev => !prev);
+      }
     } catch (err: unknown) {
       console.error('Error starting Hume AI:', err);
       setError(`Failed to start Hume AI: ${err instanceof Error ? err.message : String(err)}`);
       cleanup();
     }
-  }, [cleanup, handleMessage]);
+  }, [cleanup, handleMessage, isListening]);
 
   const stopListening = useCallback(() => {
     cleanup();
   }, [cleanup]);
 
-  return { isListening, error, startListening, stopListening };
+  const toggleMute = useCallback(() => {
+    setIsMuted(prev => !prev);
+  }, []);
+
+  return { isListening, isMuted, error, startListening, stopListening, toggleMute, cleanup };
 }

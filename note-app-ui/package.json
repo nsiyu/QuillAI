@@ -26,6 +26,8 @@
     "react-router-dom": "^6.27.0",
     "rehype-sanitize": "^6.0.0",
     "remark-gfm": "^4.0.0",
+    "textarea-caret": "^3.1.0",
+    "textarea-caret-position": "^0.1.1",
     "three": "^0.169.0"
   },
   "devDependencies": {
@@ -33,6 +35,7 @@
     "@tailwindcss/typography": "^0.5.15",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
+    "@types/textarea-caret": "^3.0.3",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "eslint": "^9.13.0",
     "eslint-plugin-react-hooks": "^5.0.0",

@@ -23,7 +23,7 @@ import { useHumeAI } from "../hooks/useHumeAI";
 import { authService } from "../services/auth";
 import { ChatMessage } from "./ChatMessage";
 import { AnimatedNoteContent } from "./AnimatedNoteContent";
-import getCaretCoordinates from "textarea-caret";
+import getCaretCoordinates from 'textarea-caret/index.js';
 
 function Home() {
   const navigate = useNavigate();
@@ -254,12 +254,20 @@ function Home() {
 
   const {
     isListening,
+    isMuted,
     error: humeError,
     startListening,
     stopListening,
+    toggleMute,
+    cleanup: cleanupHumeAI,
   } = useHumeAI({
     onTranscriptReceived: (transcript) => {
-      setChatMessages([...chatMessages, { role: "user", content: transcript }]);
+      if (transcript.trim()) {
+        setChatMessages((prevMessages) => [
+          ...prevMessages,
+          { role: "user", content: transcript },
+        ]);
+      }
     },
     onAudioReceived: (audioBlob) => {
       const audio = new Audio(URL.createObjectURL(audioBlob));
@@ -272,6 +280,13 @@ function Home() {
       ]);
     },
   });
+
+  const handleCloseChatMenu = useCallback(() => {
+    setIsChatOpen(false);
+    if (isListening) {
+      cleanupHumeAI();
+    }
+  }, [isListening, cleanupHumeAI]);
 
   const renderChatInput = () => (
     <div className="p-4 border-t border-maya/10">
@@ -308,19 +323,21 @@ function Home() {
           <button
             type="button"
             onClick={() => {
-              if (isListening) {
-                stopListening();
-              } else {
+              if (!isListening) {
                 startListening();
+              } else {
+                toggleMute();
               }
             }}
             className={`p-2 rounded-lg transition-all ${
               isListening
-                ? "bg-pink text-white hover:bg-pink/90"
+                ? isMuted
+                  ? "bg-pink text-white hover:bg-pink/90"
+                  : "bg-maya text-white hover:bg-maya/90"
                 : "border border-maya/20 text-jet/70 hover:bg-pink/10 hover:text-pink hover:border-pink"
             }`}
           >
-            {isListening ? <FiMicOff size={20} /> : <FiMic size={20} />}
+            {isListening ? (isMuted ? <FiMicOff size={20} /> : <FiMic size={20} />) : <FiMic size={20} />}
           </button>
 
           <button
@@ -405,7 +422,7 @@ function Home() {
                 : "bg-white/80 text-jet/70 hover:bg-maya/10 hover:text-maya border-pink/30 hover:border-pink"
             }`}
           >
-            {isRecording ? <FiMicOff size={24} /> : <FiMic size={24} />}
+            {isRecording ? <FiMic size={24} /> : <FiMicOff size={24} />}
           </button>
           <button
             onClick={() => setIsChatOpen(!isChatOpen)}
@@ -430,7 +447,7 @@ function Home() {
               </p>
             </div>
             <button
-              onClick={() => setIsChatOpen(false)}
+              onClick={handleCloseChatMenu}
               className="p-1.5 text-jet/70 hover:text-pink transition-colors rounded-lg"
             >
               <FiX size={24} />
