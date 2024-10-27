@@ -158,6 +158,9 @@ function Home() {
     onAudioReceived: (audioBlob) => {
       const audio = new Audio(URL.createObjectURL(audioBlob));
       audio.play();
+    },
+    onAIResponse: (response) => {
+      setChatMessages(prevMessages => [...prevMessages, { role: 'ai', content: response }]);
     }
   });
 

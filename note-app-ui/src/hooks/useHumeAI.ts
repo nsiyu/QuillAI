@@ -12,9 +12,10 @@ import {
 interface UseHumeAIProps {
   onTranscriptReceived?: (transcript: string) => void;
   onAudioReceived?: (audioBlob: Blob) => void;
+  onAIResponse?: (response: string) => void;
 }
 
-export function useHumeAI({ onTranscriptReceived, onAudioReceived }: UseHumeAIProps = {}) {
+export function useHumeAI({ onTranscriptReceived, onAudioReceived, onAIResponse }: UseHumeAIProps = {}) {
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -94,6 +95,12 @@ export function useHumeAI({ onTranscriptReceived, onAudioReceived }: UseHumeAIPr
             onTranscriptReceived(message.message.content);
           }
           break;
+        case 'assistant_message':
+          if (onAIResponse && message.message?.content) {
+            console.log('Assistant response:', message.message.content);
+            onAIResponse(message.message.content);
+          }
+          break;
         case 'audio_output':
           const mimeTypeResult = getBrowserSupportedMimeType();
           const mimeType = 'mimeType' in mimeTypeResult ? mimeTypeResult.mimeType : MimeType.WEBM;
@@ -120,7 +127,7 @@ export function useHumeAI({ onTranscriptReceived, onAudioReceived }: UseHumeAIPr
           break;
       }
     },
-    [onTranscriptReceived, playAudio, cleanup]
+    [onTranscriptReceived, onAudioReceived, onAIResponse, playAudio, cleanup]
   );
 
   const startListening = useCallback(async () => {
