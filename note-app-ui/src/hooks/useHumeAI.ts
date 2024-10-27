@@ -21,7 +21,6 @@ export function useHumeAI({ onTranscriptReceived, onAudioReceived, onAIResponse 
   const [error, setError] = useState<string | null>(null);
   const isMutedRef = useRef(false);
 
-  // Update ref when state changes
   useEffect(() => {
     isMutedRef.current = isMuted;
   }, [isMuted]);
