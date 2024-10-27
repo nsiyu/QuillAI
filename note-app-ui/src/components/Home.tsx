@@ -231,7 +231,6 @@ function Home() {
       const audio = new Audio(URL.createObjectURL(audioBlob));
       audio.play();
     },
-    noteContent: selectedNote?.content || "",
   });
 
   const renderChatInput = () => (

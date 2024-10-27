@@ -10,9 +10,9 @@ import {
 } from "hume";
 
 interface UseHumeAIProps {
+  
   onTranscriptReceived?: (transcript: string) => void;
   onAudioReceived?: (audio: Blob) => void;
-  noteContent?: string;
 }
 
 export function useHumeAI({
@@ -154,6 +154,8 @@ export function useHumeAI({
       socket.on("open", () => {
         console.log("WebSocket connection opened");
 
+        // Removed context sending here
+
         const mimeTypeResult = getBrowserSupportedMimeType();
         const mimeType =
           "mimeType" in mimeTypeResult
@@ -206,9 +208,16 @@ export function useHumeAI({
         console.log(
           `WebSocket closed. Code: ${event.code}, Reason: ${event.reason}`
         );
-        setError(
-          `WebSocket closed. Code: ${event.code}, Reason: ${event.reason}`
-        );
+
+        if (event.code !== 1000) {
+          // Only treat non-normal closures as errors
+          setError(
+            `WebSocket closed. Code: ${event.code}, Reason: ${
+              event.reason || "No reason provided"
+            }`
+          );
+        }
+
         cleanup();
       });
 
