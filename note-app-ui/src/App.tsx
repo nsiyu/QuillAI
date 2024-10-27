@@ -3,6 +3,7 @@ import { useSession } from '@supabase/auth-helpers-react'
 import Landing from './components/Landing'
 import Login from './components/Login'
 import Home from './components/Home'
+import Profile from './components/Profile'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
@@ -24,6 +25,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Home />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
             </ProtectedRoute>
           }
         />
