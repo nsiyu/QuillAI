@@ -465,7 +465,7 @@ function Home() {
                     });
                     setIsEditingContent(false);
                   }}
-                  className="absolute top-8 right-8 px-4 py-2 bg-maya text-white rounded-lg hover:bg-maya/90 transition-all"
+                  className="fixed top-8 right-8 px-4 py-2 bg-maya text-white rounded-lg hover:bg-maya/90 transition-all"
                 >
                   Save
                 </button>
