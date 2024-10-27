@@ -30,7 +30,7 @@ export function ChatMessage({ role, content }: ChatMessageProps) {
           </svg>
         )}
         <span className="text-sm font-medium">
-          {role === 'user' ? 'You' : 'NeuroPen AI'}
+          {role === 'user' ? 'You' : 'Quill AI'}
         </span>
       </div>
       {displayText}

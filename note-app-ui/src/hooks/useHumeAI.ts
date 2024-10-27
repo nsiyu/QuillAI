@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, useEffect } from 'react';
 import {
   Hume,
   HumeClient,
@@ -19,6 +19,12 @@ export function useHumeAI({ onTranscriptReceived, onAudioReceived, onAIResponse 
   const [isListening, setIsListening] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isMutedRef = useRef(false);
+
+  // Update ref when state changes
+  useEffect(() => {
+    isMutedRef.current = isMuted;
+  }, [isMuted]);
 
   const clientRef = useRef<HumeClient | null>(null);
   const socketRef = useRef<Hume.empathicVoice.chat.ChatSocket | null>(null);
@@ -168,7 +174,7 @@ export function useHumeAI({ onTranscriptReceived, onAudioReceived, onAIResponse 
             recorderRef.current = recorder;
 
             recorder.ondataavailable = async ({ data }) => {
-              if (data.size > 0 && socket.readyState === WebSocket.OPEN && !isMuted) {
+              if (data.size > 0 && socket.readyState === WebSocket.OPEN && !isMutedRef.current) {
                 try {
                   const base64Data = await convertBlobToBase64(data);
                   const audioInput = { data: base64Data };

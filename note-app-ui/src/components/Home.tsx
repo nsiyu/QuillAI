@@ -154,7 +154,7 @@ function Home() {
   const [notes, setNotes] = useState<Note[]>([
     {
       id: "1",
-      title: "Welcome to NeuroPen",
+      title: "Welcome to Quill AI",
       content: "Start writing your thoughts...",
       user_id: "",
       created_at: "",
