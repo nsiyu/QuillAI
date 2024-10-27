@@ -6,6 +6,7 @@ import { useRef } from 'react'
 import { FiSearch, FiMoon, FiSun } from 'react-icons/fi'
 import { useTheme } from '../contexts/ThemeContext'
 
+
 function Landing() {
   const navigate = useNavigate()
   const animatedText = useTypewriter('AI-powered intelligence')
