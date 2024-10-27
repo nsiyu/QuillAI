@@ -10,6 +10,8 @@ import { NoteModal } from './NoteModal';
 import { useDebounce } from '../hooks/useDebounce';
 import { useHumeAI } from '../hooks/useHumeAI';
 import { authService } from '../services/auth';
+import { ChatMessage } from './ChatMessage';
+import { AnimatedNoteContent } from './AnimatedNoteContent';
 
 function Home() {
   const navigate = useNavigate();
@@ -242,19 +244,11 @@ function Home() {
             className="w-full text-3xl font-bold bg-transparent border-none outline-none text-jet mb-4"
             placeholder="Note title"
           />
-          <textarea
-            value={selectedNote.content}
-            onChange={(e) => {
-              const updatedNote = {
-                ...selectedNote,
-                content: e.target.value
-              };
-              handleNoteContentChange(updatedNote);
-            }}
-            onMouseUp={handleTextSelection}
-            onKeyUp={handleTextSelection}
-            className="w-full h-[calc(100vh-200px)] bg-transparent border-none outline-none text-jet/90 resize-none hide-scrollbar"
-            placeholder="Start writing..."
+          <AnimatedNoteContent
+            note={selectedNote}
+            onContentChange={handleNoteContentChange}
+            onTextSelection={handleTextSelection}
+            animate={isProcessing}
           />
 
           <FloatingToolbar
@@ -328,28 +322,11 @@ function Home() {
                 </div>
               ) : (
                 chatMessages.map((message, index) => (
-                  <div
+                  <ChatMessage
                     key={index}
-                    className={`p-4 rounded-lg ${
-                      message.role === 'user'
-                        ? 'bg-maya/10 ml-8'
-                        : 'bg-white/50 mr-8'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      {message.role === 'user' ? (
-                        <FiUser className="text-maya" />
-                      ) : (
-                        <svg className="w-5 h-5 text-pink" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M20.71 7.04c.39-.39.39-1.04 0-1.43l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z" />
-                        </svg>
-                      )}
-                      <span className="text-sm font-medium">
-                        {message.role === 'user' ? 'You' : 'NeuroPen AI'}
-                      </span>
-                    </div>
-                    {message.content}
-                  </div>
+                    role={message.role}
+                    content={message.content}
+                  />
                 ))
               )}
             </div>
@@ -363,18 +340,16 @@ function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-main flex">
-      <div className="w-80 border-r border-maya/10 bg-white/30 backdrop-blur-sm">
-        <div className="p-4 border-b border-maya/10">
+      <div className="w-80 bg-gradient-main dark:bg-gradient-main-dark backdrop-blur-sm">
+        <div className="p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <svg
-                className="w-6 h-6 text-maya"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path d="M20.71 7.04c.39-.39.39-1.04 0-1.43l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z" />
-              </svg>
-              <span className="text-xl font-bold text-jet">NeuroPen</span>
+              <img 
+                src="/logo.png"
+                alt="Quill.ai Logo"
+                className="w-10 h-10 object-contain"
+              />
+              <span className="text-xl font-bold text-jet">Quill.ai</span>
             </div>
             <div className="flex items-center gap-4">
               <button 
