@@ -73,7 +73,7 @@ function Landing() {
             <div className="flex items-center gap0">
               {/* Replace SVG with Image */}
               <img src={LandingIcon} alt="NeuroPen Logo" className="w-8 h-8" />
-              <span className="text-2xl font-bold text-jet">NeuroPen</span>
+              <span className="text-2xl font-bold text-jet">Quill.ai</span>
             </div>
             <div className="flex items-center gap-6">
               <a
