@@ -653,10 +653,6 @@ video {
   z-index: 50;
 }
 
-.z-\[9999\] {
-  z-index: 9999;
-}
-
 .mx-auto {
   margin-left: auto;
   margin-right: auto;
@@ -890,6 +886,10 @@ video {
 
 .justify-between {
   justify-content: space-between;
+}
+
+.gap-1 {
+  gap: 0.25rem;
 }
 
 .gap-2 {
@@ -1448,10 +1448,6 @@ video {
 
 .hover\:bg-maya\/90:hover {
   background-color: rgb(85 193 255 / 0.9);
-}
-
-.hover\:bg-pink\/10:hover {
-  background-color: rgb(244 91 105 / 0.1);
 }
 
 .hover\:bg-pink\/90:hover {

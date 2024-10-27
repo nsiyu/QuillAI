@@ -1,58 +1,71 @@
-import { useNavigate } from 'react-router-dom'
-import { useTypewriter } from '../hooks/useTypewriter'
-import { motion } from 'framer-motion'
-import { useInView } from 'framer-motion'
-import { useRef } from 'react'
+import { useNavigate } from "react-router-dom";
+import { useTypewriter } from "../hooks/useTypewriter";
+import { motion } from "framer-motion";
+import { useInView } from "framer-motion";
+import { useRef } from "react";
+import LandingIcon from "/Users/weiho/Documents/Project/Hackathon/temp/note-app-ui/src/assets/istockphoto-846418502-612x612-removebg-preview copy 2.png"; // Import the image
 import { FiSearch, FiMoon, FiSun } from 'react-icons/fi'
 import { useTheme } from '../contexts/ThemeContext'
 
 function Landing() {
-  const navigate = useNavigate()
-  const animatedText = useTypewriter('AI-powered intelligence')
+  const navigate = useNavigate();
+  const animatedText = useTypewriter("AI-powered intelligence");
 
-  const featuresRef = useRef(null)
-  const demoRef = useRef(null)
-  const benefitsRef = useRef(null)
+  const featuresRef = useRef(null);
+  const demoRef = useRef(null);
+  const benefitsRef = useRef(null);
 
-  const isFeatureInView = useInView(featuresRef, { once: true, margin: "-100px" })
-  const isDemoInView = useInView(demoRef, { once: true, margin: "-100px" })
-  const isBenefitsInView = useInView(benefitsRef, { once: true, margin: "-100px" })
+  const isFeatureInView = useInView(featuresRef, {
+    once: true,
+    margin: "-100px",
+  });
+  const isDemoInView = useInView(demoRef, { once: true, margin: "-100px" });
+  const isBenefitsInView = useInView(benefitsRef, {
+    once: true,
+    margin: "-100px",
+  });
 
   const features = [
     {
       title: "Voice-to-Text",
-      description: "Transform your spoken words into text instantly with our advanced speech recognition.",
-      icon: "🎙️"
+      description:
+        "Transform your spoken words into text instantly with our advanced speech recognition.",
+      icon: "🎙️",
     },
     {
       title: "AI Analysis",
-      description: "Get intelligent insights and suggestions to improve your notes.",
-      icon: "🤖"
+      description:
+        "Get intelligent insights and suggestions to improve your notes.",
+      icon: "🤖",
     },
     {
       title: "Smart Organization",
-      description: "Automatically categorize and structure your notes for easy access.",
-      icon: "📚"
-    }
-  ]
+      description:
+        "Automatically categorize and structure your notes for easy access.",
+      icon: "📚",
+    },
+  ];
 
   const benefits = [
     {
       title: "Save Time",
-      description: "Reduce note-taking time by 50% with voice commands and AI assistance.",
-      icon: "⚡"
+      description:
+        "Reduce note-taking time by 50% with voice commands and AI assistance.",
+      icon: "⚡",
     },
     {
       title: "Better Understanding",
-      description: "AI-powered analysis helps you grasp complex topics more easily.",
-      icon: "🧠"
+      description:
+        "AI-powered analysis helps you grasp complex topics more easily.",
+      icon: "🧠",
     },
     {
       title: "Stay Organized",
-      description: "Keep your thoughts structured and accessible with smart organization.",
-      icon: "✨"
-    }
-  ]
+      description:
+        "Keep your thoughts structured and accessible with smart organization.",
+      icon: "✨",
+    },
+  ];
 
   const { isDarkMode, toggleDarkMode } = useTheme()
   
@@ -61,6 +74,7 @@ function Landing() {
       <div className="relative">
         <nav className="fixed w-full z-10 bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm">
           <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+
             <div className="flex items-center gap-2">
               <img 
                 src="/logo.png"
@@ -88,6 +102,7 @@ function Landing() {
           </div>
         </nav>
 
+
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -101,9 +116,10 @@ function Landing() {
                 {animatedText}
               </span>
             </h1>
-            
+
             <p className="text-xl text-jet/80 text-center max-w-2xl mx-auto font-normal">
-              Smart note-taking powered by AI to help you capture and connect ideas faster than ever.
+              Smart note-taking powered by AI to help you capture and connect
+              ideas faster than ever.
             </p>
 
             <div className="flex justify-center gap-4 pt-8">
@@ -162,7 +178,9 @@ function Landing() {
               className="text-center mb-16"
             >
               <h2 className="text-4xl font-bold mb-4">Powerful Features</h2>
-              <p className="text-xl text-jet/70">Everything you need for smarter note-taking</p>
+              <p className="text-xl text-jet/70">
+                Everything you need for smarter note-taking
+              </p>
             </motion.div>
 
             <div className="grid md:grid-cols-3 gap-8">
@@ -196,7 +214,9 @@ function Landing() {
               className="text-center mb-16"
             >
               <h2 className="text-4xl font-bold mb-4">Why Choose NeuroPen?</h2>
-              <p className="text-xl text-jet/70">Transform your note-taking experience</p>
+              <p className="text-xl text-jet/70">
+                Transform your note-taking experience
+              </p>
             </motion.div>
 
             <div className="grid md:grid-cols-3 gap-8">
@@ -224,9 +244,11 @@ function Landing() {
           className="py-24 text-center"
         >
           <div className="container mx-auto px-4">
-            <h2 className="text-4xl font-bold mb-6">Ready to Transform Your Notes?</h2>
-            <button 
-              onClick={() => navigate('/signup')}
+            <h2 className="text-4xl font-bold mb-6">
+              Ready to Transform Your Notes?
+            </h2>
+            <button
+              onClick={() => navigate("/signup")}
               className="px-8 py-3 bg-maya text-white font-semibold rounded-lg hover:bg-maya/90 transition-all shadow-lg hover:shadow-xl"
             >
               Get Started for Free
@@ -235,7 +257,7 @@ function Landing() {
         </motion.div>
       </div>
     </div>
-  )
+  );
 }
 
-export default Landing
+export default Landing;

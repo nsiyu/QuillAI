@@ -5,14 +5,19 @@ type EditModalProps = {
   onSubmit: (suggestion: string) => void;
 };
 
-export function EditModal({ isOpen, onClose, selectedText, onSubmit }: EditModalProps) {
+export function EditModal({
+  isOpen,
+  onClose,
+  selectedText,
+  onSubmit,
+}: EditModalProps) {
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-jet/20 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
         <h3 className="text-xl font-semibold text-jet mb-4">Suggest Edit</h3>
-        
+
         <div className="mb-4 p-3 bg-maya/5 rounded-lg">
           <p className="text-sm text-jet/70 mb-2">Selected text:</p>
           <p className="text-jet">{selectedText}</p>
@@ -33,7 +38,7 @@ export function EditModal({ isOpen, onClose, selectedText, onSubmit }: EditModal
           </button>
           <button
             onClick={() => {
-              const textarea = document.querySelector('textarea');
+              const textarea = document.querySelector("textarea");
               if (textarea) onSubmit(textarea.value);
               onClose();
             }}

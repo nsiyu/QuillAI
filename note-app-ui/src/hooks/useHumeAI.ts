@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from "react";
 import {
   Hume,
   HumeClient,
@@ -7,9 +7,10 @@ import {
   ensureSingleValidAudioTrack,
   getBrowserSupportedMimeType,
   MimeType,
-} from 'hume';
+} from "hume";
 
 interface UseHumeAIProps {
+  
   onTranscriptReceived?: (transcript: string) => void;
   onAudioReceived?: (audioBlob: Blob) => void;
   onAIResponse?: (response: string) => void;
@@ -33,7 +34,7 @@ export function useHumeAI({ onTranscriptReceived, onAudioReceived, onAIResponse 
     if (isClosingRef.current) return;
     isClosingRef.current = true;
 
-    if (recorderRef.current && recorderRef.current.state !== 'inactive') {
+    if (recorderRef.current && recorderRef.current.state !== "inactive") {
       recorderRef.current.stop();
     }
     recorderRef.current = null;
@@ -85,12 +86,12 @@ export function useHumeAI({ onTranscriptReceived, onAudioReceived, onAIResponse 
 
   const handleMessage = useCallback(
     (message: Hume.empathicVoice.SubscribeEvent) => {
-      console.log('Received message:', message);
+      console.log("Received message:", message);
       switch (message.type) {
-        case 'chat_metadata':
+        case "chat_metadata":
           chatGroupIdRef.current = message.chatGroupId;
           break;
-        case 'user_message':
+        case "user_message":
           if (onTranscriptReceived && message.message.content) {
             onTranscriptReceived(message.message.content);
           }
@@ -103,13 +104,16 @@ export function useHumeAI({ onTranscriptReceived, onAudioReceived, onAIResponse 
           break;
         case 'audio_output':
           const mimeTypeResult = getBrowserSupportedMimeType();
-          const mimeType = 'mimeType' in mimeTypeResult ? mimeTypeResult.mimeType : MimeType.WEBM;
+          const mimeType =
+            "mimeType" in mimeTypeResult
+              ? mimeTypeResult.mimeType
+              : MimeType.WEBM;
           const audioOutput = message.data;
           const blob = convertBase64ToBlob(audioOutput, mimeType);
           audioQueueRef.current.push(blob);
           playAudio();
           break;
-        case 'user_interruption':
+        case "user_interruption":
           if (currentAudioRef.current) {
             currentAudioRef.current.pause();
             currentAudioRef.current = null;
@@ -117,13 +121,13 @@ export function useHumeAI({ onTranscriptReceived, onAudioReceived, onAIResponse 
             audioQueueRef.current = [];
           }
           break;
-        case 'error':
-          console.error('Server error:', message);
+        case "error":
+          console.error("Server error:", message);
           setError(`Server error: ${message.message}`);
           cleanup();
           break;
         default:
-          console.warn('Unhandled message type:', message.type);
+          console.warn("Unhandled message type:", message.type);
           break;
       }
     },
@@ -135,9 +139,9 @@ export function useHumeAI({ onTranscriptReceived, onAudioReceived, onAIResponse 
       cleanup();
 
       if (!clientRef.current) {
-        const apiKey = import.meta.env.VITE_HUME_API_KEY || '';
+        const apiKey = import.meta.env.VITE_HUME_API_KEY || "";
         if (!apiKey) {
-          throw new Error('API Key is missing');
+          throw new Error("API Key is missing");
         }
         clientRef.current = new HumeClient({ apiKey });
       }
@@ -147,20 +151,24 @@ export function useHumeAI({ onTranscriptReceived, onAudioReceived, onAIResponse 
       ensureSingleValidAudioTrack(audioStreamRef.current);
 
       const socket = await clientRef.current.empathicVoice.chat.connect({
-        configId: import.meta.env.VITE_HUME_CONFIG_ID || '',
+        configId: import.meta.env.VITE_HUME_CONFIG_ID || "",
         resumedChatGroupId: chatGroupIdRef.current,
       });
 
-      socket.on('open', () => {
-        console.log('WebSocket connection opened');
+      socket.on("open", () => {
+        console.log("WebSocket connection opened");
+
+        // Removed context sending here
 
         const mimeTypeResult = getBrowserSupportedMimeType();
-        const mimeType = 'mimeType' in mimeTypeResult ? mimeTypeResult.mimeType : MimeType.WEBM;
+        const mimeType =
+          "mimeType" in mimeTypeResult
+            ? mimeTypeResult.mimeType
+            : MimeType.WEBM;
         try {
-          const recorder = new MediaRecorder(
-            audioStreamRef.current!,
-            { mimeType }
-          );
+          const recorder = new MediaRecorder(audioStreamRef.current!, {
+            mimeType,
+          });
           recorderRef.current = recorder;
 
           recorder.ondataavailable = async ({ data }) => {
@@ -170,8 +178,8 @@ export function useHumeAI({ onTranscriptReceived, onAudioReceived, onAIResponse 
                 const audioInput = { data: base64Data };
                 socket.sendAudioInput(audioInput);
               } catch (err) {
-                console.error('Error encoding audio data:', err);
-                setError('Error encoding audio data');
+                console.error("Error encoding audio data:", err);
+                setError("Error encoding audio data");
                 cleanup();
               }
             }
@@ -179,7 +187,7 @@ export function useHumeAI({ onTranscriptReceived, onAudioReceived, onAIResponse 
 
           recorder.onerror = (event: Event) => {
             const error = (event as any).error;
-            console.error('MediaRecorder error:', error);
+            console.error("MediaRecorder error:", error);
             setError(`MediaRecorder error: ${error.message}`);
             cleanup();
           };
@@ -187,29 +195,44 @@ export function useHumeAI({ onTranscriptReceived, onAudioReceived, onAIResponse 
           recorder.start(100);
           setIsListening(true);
         } catch (err) {
-          console.error('MediaRecorder initialization error:', err);
-          setError('Failed to initialize MediaRecorder');
+          console.error("MediaRecorder initialization error:", err);
+          setError("Failed to initialize MediaRecorder");
           cleanup();
         }
       });
 
-      socket.on('message', handleMessage);
-      socket.on('error', (err) => {
-        console.error('WebSocket error:', err);
+      socket.on("message", handleMessage);
+      socket.on("error", (err) => {
+        console.error("WebSocket error:", err);
         setError(`WebSocket error: ${err.message || err}`);
         cleanup();
       });
 
-      socket.on('close', (event: any) => {
-        console.log(`WebSocket closed. Code: ${event.code}, Reason: ${event.reason}`);
-        setError(`WebSocket closed. Code: ${event.code}, Reason: ${event.reason}`);
+      socket.on("close", (event: any) => {
+        console.log(
+          `WebSocket closed. Code: ${event.code}, Reason: ${event.reason}`
+        );
+
+        if (event.code !== 1000) {
+          // Only treat non-normal closures as errors
+          setError(
+            `WebSocket closed. Code: ${event.code}, Reason: ${
+              event.reason || "No reason provided"
+            }`
+          );
+        }
+
         cleanup();
       });
 
       socketRef.current = socket;
     } catch (err: unknown) {
-      console.error('Error starting Hume AI:', err);
-      setError(`Failed to start Hume AI: ${err instanceof Error ? err.message : String(err)}`);
+      console.error("Error starting Hume AI:", err);
+      setError(
+        `Failed to start Hume AI: ${
+          err instanceof Error ? err.message : String(err)
+        }`
+      );
       cleanup();
     }
   }, [cleanup, handleMessage]);
