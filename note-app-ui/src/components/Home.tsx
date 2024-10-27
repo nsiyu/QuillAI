@@ -70,12 +70,21 @@ function Home() {
     }
   }, []);
 
+  const { isProcessing, addTranscript, submitEdit } = useLectureProcessor({
+    onProcessedText: (processedText, animate) => {
+      handleProcessedText(processedText, animate);
+    },
+    selectedNote,
+  });
+
   const handleProcessedText = useCallback(
-    (processedText: string) => {
+    (processedText: string, animate?: boolean) => {
       if (selectedNote) {
         const updatedNote = {
           ...selectedNote,
-          content: selectedNote.content + "\n\n" + processedText,
+          content: animate
+            ? processedText
+            : `${selectedNote.content}\n\n${processedText}`,
         };
         handleNoteUpdate(updatedNote);
       }
@@ -103,11 +112,12 @@ function Home() {
     setTempContent(newContent);
   };
 
-  const { isProcessing, addTranscript } = useLectureProcessor({
-    onProcessedText: handleProcessedText,
-    selectedNote,
-  });
-  ``;
+  const handleEditSubmit = async (suggestion: string) => {
+    if (!selectedNote) return;
+
+    await submitEdit(selectedText, suggestion);
+  };
+
   const { isRecording, startRecording, stopRecording } = useDeepgram({
     onTranscriptReceived: (transcript) => {
       if (selectedNote) {
@@ -411,6 +421,16 @@ function Home() {
     </div>
   );
 
+  const handleEditBlur = async () => {
+    if (isEditingContent && selectedNote) {
+      await handleNoteUpdate({
+        ...selectedNote,
+        content: tempContent,
+      });
+      setIsEditingContent(false);
+    }
+  };
+
   const renderMainContent = () => {
     if (!selectedNote) {
       return (
@@ -448,6 +468,7 @@ function Home() {
                 contentEditable
                 onInput={handleContentChange}
                 onSelect={handleTextSelection}
+                onBlur={handleEditBlur} // Added onBlur handler
                 className="w-full h-full focus:outline-none p-4 pt-0"
                 style={{
                   minHeight: "100%",
@@ -456,29 +477,7 @@ function Home() {
                   lineHeight: "1.5",
                 }}
               />
-              <div className="flex gap-2 mt-2">
-                <button
-                  onClick={async () => {
-                    await handleNoteUpdate({
-                      ...selectedNote,
-                      content: tempContent,
-                    });
-                    setIsEditingContent(false);
-                  }}
-                  className="fixed top-8 right-8 px-4 py-2 bg-maya text-white rounded-lg hover:bg-maya/90 transition-all"
-                >
-                  Save
-                </button>
-                {/* <button
-                  onClick={() => {
-                    setTempContent(selectedNote.content);
-                    setIsEditingContent(false);
-                  }}
-                  className="px-4 py-2 bg-pink text-white rounded-lg hover:bg-pink/90 transition-all"
-                >
-                  Cancel
-                </button> */}
-              </div>
+              {/* Save button removed */}
             </>
           ) : (
             <div
@@ -564,9 +563,8 @@ function Home() {
             isOpen={isEditModalOpen}
             onClose={() => setIsEditModalOpen(false)}
             selectedText={selectedText}
-            onSubmit={(suggestion) => {
-              console.log("Edit suggestion:", suggestion);
-            }}
+            entireLecture={selectedNote.content}
+            onSubmit={handleEditSubmit}
           />
         </div>
 
