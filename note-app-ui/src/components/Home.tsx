@@ -190,6 +190,17 @@ function Home() {
     });
   };
 
+  // Type guard to check if the event is a MouseEvent
+  const isMouseEvent = (
+    event:
+      | React.MouseEvent<HTMLTextAreaElement>
+      | React.KeyboardEvent<HTMLTextAreaElement>
+  ): event is React.MouseEvent<HTMLTextAreaElement> => {
+    return (
+      (event as React.MouseEvent<HTMLTextAreaElement>).clientY !== undefined
+    );
+  };
+
   const handleTextSelection = (
     event:
       | React.MouseEvent<HTMLTextAreaElement>
@@ -198,6 +209,7 @@ function Home() {
     const textarea = event.currentTarget;
     const { selectionStart, selectionEnd, value } = textarea;
 
+    // Clear toolbar if there's no selection
     if (
       selectionStart === null ||
       selectionEnd === null ||
@@ -211,6 +223,7 @@ function Home() {
     const selected = value.substring(selectionStart, selectionEnd).trim();
     if (selected) {
       setSelectedText(selected);
+
       // Get the caret coordinates at the end of the selection
       const coordinates = getCaretCoordinates(textarea, selectionEnd);
       const { top, left } = coordinates;
@@ -220,9 +233,21 @@ function Home() {
       const containerRect = mainContentRef.current?.getBoundingClientRect();
 
       if (containerRect) {
-        // Calculate position relative to the container
-        let x = textareaRect.left - containerRect.left + left;
-        let y = textareaRect.top - containerRect.top + top - 40; // Adjust Y to position the toolbar above the selection
+        // Calculate X position as before
+        const x = textareaRect.left - containerRect.left + left;
+
+        let y: number;
+
+        if (isMouseEvent(event)) {
+          // For MouseEvent, use clientY
+          y = event.clientY - containerRect.top - 40; // Adjust Y as needed
+        } else {
+          // For KeyboardEvent, fallback to caret coordinates
+          y = textareaRect.top - containerRect.top + top - 40; // Adjust Y to position the toolbar above the selection
+        }
+
+        // Optional: Prevent toolbar from going above the container
+        y = Math.max(y, 0);
 
         setToolbarPositionSafe(x, y);
       }

@@ -20,7 +20,7 @@ export function FloatingToolbar({
       style={{
         top: `${position.y}px`,
         left: `${position.x}px`,
-        transform: "translate(-120%, -100%)", // Position above the selection
+        transform: "translate(-70%, -130%)", // Position above the selection
         pointerEvents: "auto", // Ensure the toolbar is clickable
         whiteSpace: "nowrap", // Prevent toolbar from wrapping
       }}
