@@ -22,8 +22,11 @@ import { useDebounce } from "../hooks/useDebounce";
 import { useHumeAI } from "../hooks/useHumeAI";
 import { authService } from "../services/auth";
 import { ChatMessage } from "./ChatMessage";
-import { AnimatedNoteContent } from "./AnimatedNoteContent";
-import getCaretCoordinates from 'textarea-caret/index.js';
+import getCaretCoordinates from "textarea-caret/index.js";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
+import "./markdown-styles.css";
 
 function Home() {
   const navigate = useNavigate();
@@ -33,6 +36,8 @@ function Home() {
     { role: "user" | "ai"; content: string }[]
   >([]);
   const [selectedText, setSelectedText] = useState("");
+  const editableRef = useRef<HTMLDivElement>(null);
+
   const [toolbarPosition, setToolbarPosition] = useState<{
     x: number;
     y: number;
@@ -41,6 +46,17 @@ function Home() {
   const [recordingError, setRecordingError] = useState<string | null>(null);
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const mainContentRef = useRef<HTMLDivElement>(null); // Reference to the scrollable container
+
+  const [isEditingContent, setIsEditingContent] = useState(false); // Added state for editing
+  const [tempContent, setTempContent] = useState(""); // State to hold temporary content during editing
+
+  const chatMessagesRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (chatMessagesRef.current) {
+      chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight;
+    }
+  }, [chatMessages]);
 
   const handleNoteUpdate = useCallback(async (updatedNote: Note) => {
     try {
@@ -67,11 +83,31 @@ function Home() {
     [selectedNote, handleNoteUpdate]
   );
 
+  useEffect(() => {
+    if (isEditingContent && editableRef.current) {
+      editableRef.current.innerHTML = tempContent.replace(/\n/g, "<br>");
+      editableRef.current.focus();
+
+      // Move cursor to the end
+      const range = document.createRange();
+      const sel = window.getSelection();
+      range.selectNodeContents(editableRef.current);
+      range.collapse(false);
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    }
+  }, [isEditingContent]);
+
+  const handleContentChange = (event: React.FormEvent<HTMLDivElement>) => {
+    const newContent = event.currentTarget.innerText;
+    setTempContent(newContent);
+  };
+
   const { isProcessing, addTranscript } = useLectureProcessor({
     onProcessedText: handleProcessedText,
     selectedNote,
   });
-
+  ``;
   const { isRecording, startRecording, stopRecording } = useDeepgram({
     onTranscriptReceived: (transcript) => {
       if (selectedNote) {
@@ -151,10 +187,10 @@ function Home() {
     }
   }, 500);
 
-  const handleNoteContentChange = (updatedNote: Note) => {
-    setSelectedNote(updatedNote);
-    debouncedNoteUpdate(updatedNote);
+  const handleNoteContentChange = (updatedContent: string) => {
+    setTempContent(updatedContent);
   };
+
   const setToolbarPositionSafe = (x: number, y: number) => {
     const toolbarWidth = 200; // Approximate width of the toolbar
     const toolbarHeight = 50; // Approximate height of the toolbar
@@ -187,68 +223,84 @@ function Home() {
       y: safeY,
     });
   };
+
   const isMouseEvent = (
     event:
-      | React.MouseEvent<HTMLTextAreaElement>
+      | React.MouseEvent<HTMLTextAreaElement | HTMLDivElement>
       | React.KeyboardEvent<HTMLTextAreaElement>
-  ): event is React.MouseEvent<HTMLTextAreaElement> => {
-    return (
-      (event as React.MouseEvent<HTMLTextAreaElement>).clientY !== undefined
-    );
+  ): event is React.MouseEvent<HTMLTextAreaElement | HTMLDivElement> => {
+    return (event as React.MouseEvent).clientY !== undefined;
   };
 
   const handleTextSelection = (
     event:
-      | React.MouseEvent<HTMLTextAreaElement>
+      | React.MouseEvent<HTMLTextAreaElement | HTMLDivElement>
       | React.KeyboardEvent<HTMLTextAreaElement>
   ) => {
-    const textarea = event.currentTarget;
-    const { selectionStart, selectionEnd, value } = textarea;
+    let selected = "";
+    let x = 0;
+    let y = 0;
 
-    // Clear toolbar if there's no selection
-    if (
-      selectionStart === null ||
-      selectionEnd === null ||
-      selectionStart === selectionEnd
-    ) {
-      setToolbarPosition(null);
-      setSelectedText("");
-      return;
+    if (event.currentTarget instanceof HTMLTextAreaElement) {
+      const textarea = event.currentTarget;
+      const { selectionStart, selectionEnd, value } = textarea;
+
+      // Clear toolbar if there's no selection
+      if (
+        selectionStart === null ||
+        selectionEnd === null ||
+        selectionStart === selectionEnd
+      ) {
+        setToolbarPosition(null);
+        setSelectedText("");
+        return;
+      }
+
+      selected = value.substring(selectionStart, selectionEnd).trim();
+      if (selected) {
+        // Get the caret coordinates at the end of the selection
+        const coordinates = getCaretCoordinates(textarea, selectionEnd);
+        const { top, left } = coordinates;
+
+        // Get bounding rectangles
+        const textareaRect = textarea.getBoundingClientRect();
+        const containerRect = mainContentRef.current?.getBoundingClientRect();
+
+        if (containerRect) {
+          // Calculate X position as before
+          x = textareaRect.left - containerRect.left + left;
+
+          if (isMouseEvent(event)) {
+            // For MouseEvent, use clientY
+            y = event.clientY - containerRect.top - 40; // Adjust Y as needed
+          } else {
+            // For KeyboardEvent, fallback to caret coordinates
+            y = textareaRect.top - containerRect.top + top - 40; // Adjust Y to position the toolbar above the selection
+          }
+        }
+      }
+    } else if (event.currentTarget instanceof HTMLDivElement) {
+      const selection = window.getSelection();
+      if (selection && selection.toString().trim()) {
+        selected = selection.toString().trim();
+
+        const range = selection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        const containerRect = mainContentRef.current?.getBoundingClientRect();
+
+        if (containerRect) {
+          x = rect.left - containerRect.left + rect.width / 2;
+          y = rect.top - containerRect.top - 40; // Adjust Y to position the toolbar above the selection
+        }
+      }
     }
 
-    const selected = value.substring(selectionStart, selectionEnd).trim();
     if (selected) {
       setSelectedText(selected);
-
-      // Get the caret coordinates at the end of the selection
-      const coordinates = getCaretCoordinates(textarea, selectionEnd);
-      const { top, left } = coordinates;
-
-      // Get bounding rectangles
-      const textareaRect = textarea.getBoundingClientRect();
-      const containerRect = mainContentRef.current?.getBoundingClientRect();
-
-      if (containerRect) {
-        // Calculate X position as before
-        const x = textareaRect.left - containerRect.left + left;
-
-        let y: number;
-
-        if (isMouseEvent(event)) {
-          // For MouseEvent, use clientY
-          y = event.clientY - containerRect.top - 40; // Adjust Y as needed
-        } else {
-          // For KeyboardEvent, fallback to caret coordinates
-          y = textareaRect.top - containerRect.top + top - 40; // Adjust Y to position the toolbar above the selection
-        }
-
-        // Optional: Prevent toolbar from going above the container
-        y = Math.max(y, 0);
-
-        setToolbarPositionSafe(x, y);
-      }
+      setToolbarPositionSafe(x, y);
     } else {
       setToolbarPosition(null);
+      setSelectedText("");
     }
   };
 
@@ -337,7 +389,15 @@ function Home() {
                 : "border border-maya/20 text-jet/70 hover:bg-pink/10 hover:text-pink hover:border-pink"
             }`}
           >
-            {isListening ? (isMuted ? <FiMicOff size={20} /> : <FiMic size={20} />) : <FiMic size={20} />}
+            {isListening ? (
+              isMuted ? (
+                <FiMicOff size={20} />
+              ) : (
+                <FiMic size={20} />
+              )
+            ) : (
+              <FiMic size={20} />
+            )}
           </button>
 
           <button
@@ -360,8 +420,11 @@ function Home() {
       );
     }
 
+    const contentClassName =
+      "w-full min-h-[500px] max-h-[72vh] overflow-y-auto rounded-lg p-4 focus:outline-none ";
+
     return (
-      <div className="max-w-3xl mx-auto relative">
+      <div className="max-w-3xl mx-auto relative flex flex-col h-full overflow-y-auto">
         <div
           className={`transition-all duration-300 ${isChatOpen ? "mr-80" : ""}`}
         >
@@ -374,15 +437,109 @@ function Home() {
                 title: e.target.value,
               })
             }
-            className="w-full text-3xl font-bold bg-transparent border-none outline-none text-jet mb-4"
+            className="w-full text-3xl font-bold bg-transparent border-none outline-none text-jet mb-2"
             placeholder="Note title"
           />
-          <AnimatedNoteContent
-            note={selectedNote}
-            onContentChange={handleNoteContentChange}
-            onTextSelection={handleTextSelection}
-            animate={isProcessing}
-          />
+
+          {isEditingContent ? (
+            <>
+              <div
+                ref={editableRef}
+                contentEditable
+                onInput={handleContentChange}
+                onSelect={handleTextSelection}
+                className="w-full h-full focus:outline-none p-4 pt-0"
+                style={{
+                  minHeight: "100%",
+                  fontFamily: "inherit",
+                  fontSize: "inherit",
+                  lineHeight: "1.5",
+                }}
+              />
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={async () => {
+                    await handleNoteUpdate({
+                      ...selectedNote,
+                      content: tempContent,
+                    });
+                    setIsEditingContent(false);
+                  }}
+                  className="absolute top-8 right-8 px-4 py-2 bg-maya text-white rounded-lg hover:bg-maya/90 transition-all"
+                >
+                  Save
+                </button>
+                {/* <button
+                  onClick={() => {
+                    setTempContent(selectedNote.content);
+                    setIsEditingContent(false);
+                  }}
+                  className="px-4 py-2 bg-pink text-white rounded-lg hover:bg-pink/90 transition-all"
+                >
+                  Cancel
+                </button> */}
+              </div>
+            </>
+          ) : (
+            <div
+              onClick={() => {
+                setIsEditingContent(true);
+                setTempContent(selectedNote.content);
+              }}
+              onMouseUp={handleTextSelection}
+              className={contentClassName}
+            >
+              <ReactMarkdown
+                className="markdown-body"
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw]}
+                components={{
+                  h1: ({ node, ...props }) => (
+                    <h1
+                      className="text-3xl font-bold mt-8 mb-4 border-b pb-2"
+                      {...props}
+                    />
+                  ),
+                  h2: ({ node, ...props }) => (
+                    <h2
+                      className="text-2xl font-bold mt-6 mb-4 border-b pb-2"
+                      {...props}
+                    />
+                  ),
+                  h3: ({ node, ...props }) => (
+                    <h3
+                      className="text-xl font-semibold mt-4 mb-3"
+                      {...props}
+                    />
+                  ),
+                  h4: ({ node, ...props }) => (
+                    <h4
+                      className="text-lg font-semibold mt-4 mb-2"
+                      {...props}
+                    />
+                  ),
+                  h5: ({ node, ...props }) => (
+                    <h5
+                      className="text-base font-semibold mt-2 mb-1"
+                      {...props}
+                    />
+                  ),
+                  p: ({ node, ...props }) => <p className="mb-4" {...props} />,
+                  ul: ({ node, ...props }) => (
+                    <ul className="list-disc pl-6 mb-4" {...props} />
+                  ),
+                  ol: ({ node, ...props }) => (
+                    <ol className="list-decimal pl-6 mb-4" {...props} />
+                  ),
+                  li: ({ node, ...props }) => (
+                    <li className="mb-2" {...props} />
+                  ),
+                }}
+              >
+                {selectedNote.content}
+              </ReactMarkdown>
+            </div>
+          )}
 
           <FloatingToolbar
             position={toolbarPosition}
@@ -413,24 +570,26 @@ function Home() {
           />
         </div>
 
-        <div className="fixed right-8 bottom-8 flex gap-2">
-          <button
-            onClick={toggleRecording}
-            className={`p-4 rounded-full shadow-lg transition-all border-2 ${
-              isRecording
-                ? "bg-pink text-white hover:bg-pink/90 border-pink"
-                : "bg-white/80 text-jet/70 hover:bg-maya/10 hover:text-maya border-pink/30 hover:border-pink"
-            }`}
-          >
-            {isRecording ? <FiMic size={24} /> : <FiMicOff size={24} />}
-          </button>
-          <button
-            onClick={() => setIsChatOpen(!isChatOpen)}
-            className="p-4 bg-maya text-white rounded-full shadow-lg hover:bg-maya/90 transition-all"
-          >
-            {isChatOpen ? <FiX size={24} /> : <FiMessageSquare size={24} />}
-          </button>
-        </div>
+        {!isChatOpen && (
+          <div className="fixed right-8 bottom-8 flex gap-2">
+            <button
+              onClick={toggleRecording}
+              className={`p-4 rounded-full shadow-lg transition-all border-2 ${
+                isRecording
+                  ? "bg-pink text-white hover:bg-pink/90 border-pink"
+                  : "bg-white/80 text-jet/70 hover:bg-maya/10 hover:text-maya border-pink/30 hover:border-pink"
+              }`}
+            >
+              {isRecording ? <FiMic size={24} /> : <FiMicOff size={24} />}
+            </button>
+            <button
+              onClick={() => setIsChatOpen(!isChatOpen)}
+              className="p-4 bg-maya text-white rounded-full shadow-lg hover:bg-maya/90 transition-all"
+            >
+              {isChatOpen ? <FiX size={24} /> : <FiMessageSquare size={24} />}
+            </button>
+          </div>
+        )}
 
         <div
           className={`fixed top-0 right-0 w-[480px] h-full bg-white/30 backdrop-blur-sm border-l border-maya/10 transform transition-transform duration-300 ${
@@ -455,7 +614,10 @@ function Home() {
           </div>
 
           <div className="flex flex-col h-[calc(100vh-140px)]">
-            <div className="flex-1 p-6 space-y-6 overflow-y-auto">
+            <div
+              ref={chatMessagesRef}
+              className="flex-1 p-6 space-y-6 overflow-y-auto"
+            >
               {chatMessages.length === 0 ? (
                 <div className="text-center text-jet/50 py-8">
                   <FiMessageSquare
@@ -486,8 +648,8 @@ function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-main flex">
-      <div className="w-80 bg-gradient-main dark:bg-gradient-main-dark backdrop-blur-sm">
+    <div className="h-screen bg-gradient-main flex">
+      <div className="w-80 bg-gradient-main dark:bg-gradient-main-dark backdrop-blur-sm flex flex-col h-screen">
         <div className="p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -527,7 +689,7 @@ function Home() {
           </div>
         </div>
 
-        <div className="p-4 space-y-3">
+        <div className="p-4 space-y-3 flex-grow overflow-y-auto">
           <button
             onClick={() => setIsNoteModalOpen(true)}
             className="w-full flex items-center gap-2 px-4 py-2 bg-maya text-white rounded-lg hover:bg-maya/90 transition-all"
@@ -560,7 +722,10 @@ function Home() {
         </div>
       </div>
 
-      <div className="flex-1 p-8 overflow-y-auto relative" ref={mainContentRef}>
+      <div
+        className="flex-1 p-8 overflow-y-auto relative h-screen flex flex-col"
+        ref={mainContentRef}
+      >
         {renderMainContent()}
       </div>
 
