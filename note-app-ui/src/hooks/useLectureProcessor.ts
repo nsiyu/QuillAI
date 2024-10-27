@@ -10,7 +10,7 @@ interface ProcessedSegment {
 }
 
 interface UseLectureProcessorProps {
-  onProcessedText: (processedText: string) => void;
+  onProcessedText: (processedText: string, animate?: boolean) => void;
   selectedNote: Note | null;
 }
 
@@ -26,13 +26,12 @@ export function useLectureProcessor({
 
   const processTranscript = useCallback(async () => {
     if (transcriptBuffer.current.length === 0 || !selectedNote) {
-      console.log('No text to process or no selected note');
       return;
     }
 
+    setIsProcessing(true);
     const textToProcess = transcriptBuffer.current.join(' ');
     transcriptBuffer.current = [];
-    setIsProcessing(true);
 
     try {
       if (!session?.access_token) {
@@ -55,8 +54,6 @@ export function useLectureProcessor({
       }
 
       const { processedText } = await response.json();
-      console.log('Received processed text:', processedText); 
-      
       processedSegments.current.push({
         original: textToProcess,
         processed: processedText,
@@ -64,27 +61,27 @@ export function useLectureProcessor({
       });
 
       onProcessedText(processedText);
+      
+      // Add a small delay before setting isProcessing to false
+      setTimeout(() => {
+        setIsProcessing(false);
+      }, 1000); // Adjust this delay as needed
 
     } catch (error) {
       console.error('Error processing lecture:', error);
-    } finally {
       setIsProcessing(false);
     }
   }, [onProcessedText, selectedNote, session]);
 
-  const addTranscript = useCallback((transcript: string) => {
-    transcriptBuffer.current.push(transcript);
-
-    if (processingTimeout.current) {
-      clearTimeout(processingTimeout.current);
-    }
-
-    processingTimeout.current = setTimeout(processTranscript, 5000);
-  }, [processTranscript]);
-
   return {
     isProcessing,
-    addTranscript,
+    addTranscript: useCallback((transcript: string) => {
+      transcriptBuffer.current.push(transcript);
+      if (processingTimeout.current) {
+        clearTimeout(processingTimeout.current);
+      }
+      processingTimeout.current = setTimeout(processTranscript, 2000);
+    }, [processTranscript]),
     processedSegments: processedSegments.current
   };
 }

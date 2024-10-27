@@ -4,6 +4,7 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
@@ -11,9 +12,15 @@ export default {
         'floral': '#fff8f0',
         'maya': '#55c1ff',
         'pink': '#f45b69',
+        'dark': {
+          'bg': '#1a1a1a',
+          'surface': '#2a2a2a',
+          'text': '#e0e0e0'
+        }
       },
       backgroundImage: {
-        'gradient-main': 'linear-gradient(135deg, #55c1ff10 0%, #f45b6910 50%, #55c1ff10 100%)',
+        'gradient-main': 'linear-gradient(135deg, #55c1ff15 0%, #f45b6905 50%, #55c1ff15 100%)',
+        'gradient-main-dark': 'linear-gradient(135deg, #55c1ff20 0%, #f45b6910 50%, #55c1ff20 100%)',
       },
       fontFamily: {
         'sans': ['Inter Var', 'system-ui', 'sans-serif'],

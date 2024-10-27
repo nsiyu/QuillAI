@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import { useInView } from "framer-motion";
 import { useRef } from "react";
 import LandingIcon from "/Users/weiho/Documents/Project/Hackathon/temp/note-app-ui/src/assets/istockphoto-846418502-612x612-removebg-preview copy 2.png"; // Import the image
+import { FiSearch, FiMoon, FiSun } from 'react-icons/fi'
+import { useTheme } from '../contexts/ThemeContext'
 
 function Landing() {
   const navigate = useNavigate();
@@ -65,41 +67,43 @@ function Landing() {
     },
   ];
 
+  const { isDarkMode, toggleDarkMode } = useTheme()
+  
   return (
-    <div className="relative min-h-screen text-jet">
+    <div className="relative min-h-screen text-jet dark:text-dark-text bg-white dark:bg-dark-bg">
       <div className="relative">
-        <nav className="fixed w-full z-10">
+        <nav className="fixed w-full z-10 bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm">
           <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center gap0">
-              {/* Replace SVG with Image */}
-              <img src={LandingIcon} alt="NeuroPen Logo" className="w-8 h-8" />
-              <span className="text-2xl font-bold text-jet">Quill.ai</span>
+
+            <div className="flex items-center gap-2">
+              <img 
+                src="/logo.png"
+                alt="Quill.ai Logo"
+                className="w-6 h-6 object-contain"
+              />
+              <span className="text-xl font-bold text-jet">Quill.ai</span>
             </div>
             <div className="flex items-center gap-6">
-              <a
-                href="#features"
+              <a href="#features" className="font-medium hover:text-maya transition-colors">Features</a>
+              <a href="#pricing" className="font-medium hover:text-maya transition-colors">About</a>
+              <button 
+                onClick={() => navigate('/login')} 
                 className="font-medium hover:text-maya transition-colors"
-              >
-                Features
-              </a>
-              <a
-                href="#pricing"
-                className="font-medium hover:text-maya transition-colors"
-              >
-                About
-              </a>
-              <button
-                onClick={() => navigate("/login")}
-                className="px-6 py-2 text-maya font-semibold rounded-lg border-2 border-maya hover:bg-maya/10 transition-all"
               >
                 Login
+              </button>
+              <button
+                onClick={toggleDarkMode}
+                className="p-2 text-maya hover:text-maya/80 transition-colors dark:text-maya dark:hover:text-maya/80"
+              >
+                {isDarkMode ? <FiSun size={20} /> : <FiMoon size={20} />}
               </button>
             </div>
           </div>
         </nav>
 
-        {/* Hero Section */}
-        <motion.div
+
+        <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
@@ -122,9 +126,14 @@ function Landing() {
               <button className="px-8 py-3 bg-jet text-floral font-semibold rounded-lg hover:bg-jet/90 transition-all shadow-lg hover:shadow-xl">
                 Get Started
               </button>
-              <button className="px-8 py-3 text-maya font-semibold rounded-lg border border-maya/30 hover:border-maya hover:bg-maya/5 transition-all">
-                Watch Demo
-              </button>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Quick search..."
+                  className="px-8 py-3 text-jet/70 font-semibold rounded-lg border border-gray-200 hover:border-gray-300 focus:border-maya focus:outline-none focus:ring-1 focus:ring-maya/30 transition-all w-[300px] bg-white/50"
+                />
+                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-jet/50" size={18} />
+              </div>
             </div>
           </div>
 
@@ -157,10 +166,9 @@ function Landing() {
           </motion.div>
         </motion.div>
 
-        {/* Features Section */}
-        <motion.div
+        <motion.div 
           ref={featuresRef}
-          className="py-24 bg-white/30 backdrop-blur-sm"
+          className="py-24"
         >
           <div className="container mx-auto px-4">
             <motion.div
@@ -182,7 +190,7 @@ function Landing() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={isFeatureInView ? { opacity: 1, y: 0 } : {}}
                   transition={{ duration: 0.8, delay: index * 0.2 }}
-                  className="p-6 bg-white/50 rounded-xl shadow-lg"
+                  className="p-6 bg-white/50 dark:bg-dark-surface/50 backdrop-blur-sm rounded-xl shadow-lg"
                 >
                   <div className="text-4xl mb-4">{feature.icon}</div>
                   <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
@@ -196,7 +204,7 @@ function Landing() {
         {/* Benefits Section */}
         <motion.div
           ref={benefitsRef}
-          className="py-24 bg-gradient-to-r from-maya/5 to-pink/5"
+          className="py-24"
         >
           <div className="container mx-auto px-4">
             <motion.div
@@ -218,7 +226,7 @@ function Landing() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={isBenefitsInView ? { opacity: 1, y: 0 } : {}}
                   transition={{ duration: 0.8, delay: index * 0.2 }}
-                  className="p-6 bg-white/50 rounded-xl shadow-lg"
+                  className="p-6 bg-white/50 dark:bg-dark-surface/50 backdrop-blur-sm rounded-xl shadow-lg"
                 >
                   <div className="text-4xl mb-4">{benefit.icon}</div>
                   <h3 className="text-xl font-bold mb-2">{benefit.title}</h3>
@@ -229,7 +237,6 @@ function Landing() {
           </div>
         </motion.div>
 
-        {/* Call to Action */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
