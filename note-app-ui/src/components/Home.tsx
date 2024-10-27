@@ -278,6 +278,9 @@ function Home() {
       const audio = new Audio(URL.createObjectURL(audioBlob));
       audio.play();
     },
+    onAIResponse: (response) => {
+      setChatMessages(prevMessages => [...prevMessages, { role: 'ai', content: response }]);
+    }
   });
 
   const renderChatInput = () => {
@@ -345,7 +348,7 @@ function Home() {
             }}
             onMouseUp={handleTextSelection}
             onKeyUp={handleTextSelection}
-            className="w-full h-[calc(100vh-200px)] bg-transparent border-none outline-none text-jet/90 resize-none"
+            className="w-full h-[calc(100vh-200px)] bg-transparent border-none outline-none text-jet/90 resize-none hide-scrollbar"
             placeholder="Start writing..."
           />
 
@@ -488,7 +491,10 @@ function Home() {
               <span className="text-xl font-bold text-jet">NeuroPen</span>
             </div>
             <div className="flex items-center gap-4">
-              <button className="text-jet/70 hover:text-maya transition-colors">
+              <button 
+                onClick={() => navigate('/profile')} 
+                className="text-jet/70 hover:text-maya transition-colors"
+              >
                 <FiUser size={20} />
               </button>
               <button

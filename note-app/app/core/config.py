@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
     DATABASE_URL: str
-
+    
     class Config:
         env_file = ".env.local"
         case_sensitive = False

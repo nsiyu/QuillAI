@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { useSession } from '@supabase/auth-helpers-react';
 import { Note } from '../services/notes';
+import { getApiUrl } from '../config/api';
 
 interface ProcessedSegment {
   original: string;
@@ -38,9 +39,7 @@ export function useLectureProcessor({
         throw new Error('No authentication token found');
       }
 
-      console.log('Processing text:', textToProcess);
-
-      const response = await fetch('http://localhost:8000/api/v1/lecture/process', {
+      const response = await fetch(`${getApiUrl()}/api/v1/lecture/process`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
